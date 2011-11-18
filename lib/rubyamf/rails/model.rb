@@ -67,7 +67,13 @@ module RubyAMF::Rails
       # Set attributtes
       # warhammerkid: Should we be setting associations some other way (not attributes)?
       rubyamf_set_non_attributes attrs, base_attrs
-      self.send(:attributes=, attrs)
+
+      begin
+        self.send(:attributes=, attrs)
+      rescue => e
+        logger.fatal("RUBYAMF failed setting attrs #{attrs.inspect}, base attrs #{base_attrs.inspect} error: #{e}")
+        raise
+      end
 
       self
     end
@@ -110,7 +116,15 @@ module RubyAMF::Rails
     end
 
     def rubyamf_retrieve_association association
-      case self.class.reflect_on_association(association).macro
+      association = association.to_sym
+      begin
+        macro = self.class.reflect_on_association(association).macro
+      rescue => e
+        logger.fatal("RubyAMF: association missing for class #{self.class.name}: #{association.inspect}")
+        raise
+      end
+
+      case macro
       when :has_many, :has_and_belongs_to_many
         send(association).to_a
       when :has_one, :belongs_to

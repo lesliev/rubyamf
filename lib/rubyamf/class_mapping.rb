@@ -222,7 +222,12 @@ module RubyAMF
         end
       else
         # Fall through to default handlers
-        props = super(ruby_obj)
+        begin
+          props = super(ruby_obj)
+        rescue => e
+          RubyAMF.logger.fatal("RUBYAMF failed to serialize #{ruby_obj.inspect} (#{e.message})")
+          raise
+        end
       end
 
       # Translate case of properties if necessary
