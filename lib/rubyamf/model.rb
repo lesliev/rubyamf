@@ -115,11 +115,18 @@ module RubyAMF
       not_attributes = attrs.keys.select {|k| !base_attrs.include?(k)}
       not_attributes.each do |k|
         setter = "#{k}="
-        next if setter !~ /^[a-z][A-Za-z0-9_]+=/ # Make sure setter doesn't start with capital, dollar, or underscore to make this safer
+        if setter !~ /^[a-z][A-Za-z0-9_]+=/ # Make sure setter doesn't start with capital, dollar, or underscore to make this safer
+          RubyAMF.logger.warn("RubyAMF: Non attribute setter looks invalid for class #{self.class.name}, skipping: #{setter}")
+          attrs.delete(k)
+          next 
+        end
+
         if respond_to?(setter)
+          RubyAMF.logger.warn("RubyAMF: Non attribute setter exists for class #{self.class.name}, setting: #{setter}")
           send(setter, attrs.delete(k))
         else
-          RubyAMF.logger.warn("RubyAMF: Cannot call setter for non-attribute on #{self.class.name}: #{k}")
+          RubyAMF.logger.warn("RubyAMF: Non-attribute setter missing on #{self.class.name}, skipping: #{k}")
+          attrs.delete(k)
         end
       end
     end
