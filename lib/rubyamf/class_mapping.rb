@@ -135,6 +135,41 @@ module RubyAMF
       as_class_name
     end
 
+    protected
+
+    # If the mapping for an actionscript class isn't found, load each of the models, searching
+    # for a model that provides the mapping
+    def model_load_search as_class_name
+
+      RubyAMF.logger.debug("model_load_search searching for #{as_class_name.inspect}")
+      @@model_load_complete ||= false
+      return nil if @@model_load_complete
+
+      tables = (ActiveRecord::Base.connection.tables - %w[schema_migrations])
+
+      # try to prioritize tables with names similar to the actionscript class name
+      priority_search_key = as_class_name.split('.').last || as_class_name
+      priority_tables = tables.grep(/#{priority_search_key}/i)
+
+      RubyAMF.logger.debug("model_load_search tables: #{tables.inspect}")
+      tables = (priority_tables + tables).uniq
+      RubyAMF.logger.debug("model_load_search prioritized tables: #{tables.inspect}")
+
+      tables.each do |table|
+        RubyAMF.logger.debug("model_load_search loading #{table}")
+        table.classify.constantize rescue nil
+        ruby_class_name = @mappings.get_ruby_class_name(as_class_name)
+        if ruby_class_name
+          RubyAMF.logger.debug("model_load_search found #{ruby_class_name.inspect}")
+          return ruby_class_name 
+        end
+      end
+
+      @@model_load_complete = true
+      nil
+    end
+    public
+
     # Creates a ruby object to populate during deserialization for the given
     # actionscript class name. If that actionscript class name is mapped to a
     # ruby class, an object of that class is created using
@@ -145,8 +180,15 @@ module RubyAMF
     # attribute is set to the actionscript class name. As RocketAMF calls this
     # for all objects on deserialization, auto-mapping takes place here if enabled.
     def get_ruby_obj as_class_name
+
+      return RocketAMF::Values::TypedHash.new(as_class_name) if !as_class_name.present?
+
+      RubyAMF.logger.debug("get_ruby_obj searching for: #{as_class_name.inspect}")
+
       # Get ruby class name
       ruby_class_name = @mappings.get_ruby_class_name as_class_name
+
+      RubyAMF.logger.debug("get_ruby_obj after direct mapping: #{ruby_class_name.inspect}")
 
       # Auto-map if necessary, removing namespacing to create mapped class name
       if RubyAMF.configuration.auto_class_mapping && as_class_name && ruby_class_name.nil?
@@ -154,8 +196,16 @@ module RubyAMF
         @mappings.map :as => as_class_name, :ruby => ruby_class_name
       end
 
+      RubyAMF.logger.debug("get_ruby_obj after auto mapping: #{ruby_class_name.inspect}")
+
+      # Still don't know our ruby class? Load models until we find it
+      ruby_class_name = model_load_search(as_class_name) if ruby_class_name.nil?
+  
+      RubyAMF.logger.debug("get_ruby_obj after model_load_search: #{ruby_class_name.inspect}")
+
       # Create ruby object
       if ruby_class_name.nil?
+        RubyAMF.logger.warn("get_ruby_obj failed to map #{as_class_name.inspect}, returning TypedHash")
         return RocketAMF::Values::TypedHash.new(as_class_name)
       else
         ruby_class = ruby_class_name.constantize
