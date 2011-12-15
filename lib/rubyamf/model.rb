@@ -193,7 +193,10 @@ module RubyAMF
 
         options[:include] = include_associations
       end
-
+      
+      RubyAMF.logger.debug "RubyAMF Hash -------------------------------------------------"
+      RubyAMF.logger.debug hash.inspect
+      
       hash
     end
 
