@@ -5,6 +5,7 @@ describe RubyAMF::Envelope do
     @envelope = RubyAMF::Envelope.new
     @logger = mock(RubyAMF::Logger)
     @logger.stub!("log_error")
+    @logger.stub!("debug")
     RubyAMF.configuration = RubyAMF::Configuration.new # Reset configuration
   end
 
@@ -15,7 +16,7 @@ describe RubyAMF::Envelope do
   end
 
   it "should raise and handle returned exception objects like RubyAMF::Fault" do
-    RubyAMF.should_receive("logger").and_return(@logger)
+    RubyAMF.should_receive(:logger).at_least(1).times.and_return(@logger)
 
     res = RubyAMF::Envelope.new
     req = create_envelope('remotingMessage.bin')
@@ -29,7 +30,7 @@ describe RubyAMF::Envelope do
   end
 
   it "should clear backtrace from raised exceptions before serialization" do
-    RubyAMF.should_receive("logger").and_return(@logger)
+    RubyAMF.should_receive(:logger).at_least(1).times.and_return(@logger)
 
     res = RubyAMF::Envelope.new
     req = create_envelope('remotingMessage.bin')
@@ -45,7 +46,7 @@ describe RubyAMF::Envelope do
   it "should log exceptions in each_method_call handler" do
     e = Exception.new('Error in call')
     @logger.should_receive("log_error").with(e).and_return(nil)
-    RubyAMF.should_receive("logger").and_return(@logger)
+    RubyAMF.should_receive(:logger).at_least(1).times.and_return(@logger)
 
     res = RubyAMF::Envelope.new
     req = create_envelope('remotingMessage.bin')
