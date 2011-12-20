@@ -106,15 +106,6 @@ module RubyAMF
       else
         rubyamf_set_non_attributes props, {} # Calls setters for all props it finds setters for
       end
-      
-      # Ensure sti attributes get set to the proper type
-      RubyAMF.logger.debug "RubyAMF -------------- STI ------------------------------------------"
-      RubyAMF.logger.debug "RubyAMF -------------- STI ------------------------------------------"
-      RubyAMF.logger.debug "RubyAMF -------------- STI ------------------------------------------"
-      
-      unless self.class.descends_from_active_record?
-        write_attribute(self.class.inheritance_column, self.class.sti_name)
-      end
     end
 
     # Calls setters for all keys in the given hash not found in the base attributes
