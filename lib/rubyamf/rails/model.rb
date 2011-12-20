@@ -99,6 +99,17 @@ module RubyAMF::Rails
         logger.fatal("RUBYAMF failed setting attrs #{attrs.inspect}, base attrs #{base_attrs.inspect} error: #{e}")
         raise
       end
+      
+      # Set sti type attribute
+      unless self.class.descends_from_active_record?
+        RubyAMF.logger.debug "RubyAMF: -----------------------------------------------------------------"
+        RubyAMF.logger.debug "#{self.class.name} doesn't descend from ActiveRecord"
+        RubyAMF.logger.debug "Setting #{self.class.inheritance_column} column to #{self.class.sti_name}"
+        RubyAMF.logger.debug "RubyAMF: -----------------------------------------------------------------"
+        if self.respond_to? "#{self.class.inheritance_column}="
+          self.send("#{self.class.inheritance_column}=", self.class.sti_name)
+        end
+      end
 
       self
     end

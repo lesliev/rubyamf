@@ -106,6 +106,15 @@ module RubyAMF
       else
         rubyamf_set_non_attributes props, {} # Calls setters for all props it finds setters for
       end
+      
+      # Ensure sti attributes get set to the proper type
+      RubyAMF.logger.debug "RubyAMF -------------- STI ------------------------------------------"
+      RubyAMF.logger.debug "RubyAMF -------------- STI ------------------------------------------"
+      RubyAMF.logger.debug "RubyAMF -------------- STI ------------------------------------------"
+      
+      unless self.class.descends_from_active_record?
+        write_attribute(self.class.inheritance_column, self.class.sti_name)
+      end
     end
 
     # Calls setters for all keys in the given hash not found in the base attributes
@@ -113,6 +122,8 @@ module RubyAMF
     # the keys to hopefully prevent more private setters from being called.
     def rubyamf_set_non_attributes attrs, base_attrs
       not_attributes = attrs.keys.select {|k| !base_attrs.include?(k)}
+      
+      RubyAMF.logger.debug "RubyAMF -----------------------------------------------------------"
       not_attributes.each do |k|
         setter = "#{k}="
         if setter !~ /^[a-z][A-Za-z0-9_]+=/ # Make sure setter doesn't start with capital, dollar, or underscore to make this safer
@@ -120,15 +131,17 @@ module RubyAMF
           attrs.delete(k)
           next 
         end
-
+        
+        
         if respond_to?(setter)
-          RubyAMF.logger.warn("RubyAMF: #{self.class.name}, setting: #{setter}=")
+          RubyAMF.logger.warn("#{self.class.name}, setting: #{setter}")
           send(setter, attrs.delete(k))
         else
-          RubyAMF.logger.warn("RubyAMF: #{self.class.name}, skipping un-mapped attribute: #{k}=")
+          RubyAMF.logger.warn("#{self.class.name}, skipping un-mapped attribute: #{k}=")
           attrs.delete(k)
         end
       end
+      RubyAMF.logger.debug "RubyAMF -----------------------------------------------------------"
     end
 
     # Like serializable_hash, rubyamf_hash returns a hash for serialization

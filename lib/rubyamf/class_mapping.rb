@@ -182,13 +182,14 @@ module RubyAMF
     def get_ruby_obj as_class_name
 
       return RocketAMF::Values::TypedHash.new(as_class_name) if !as_class_name.present?
-
-      RubyAMF.logger.debug("get_ruby_obj searching for: #{as_class_name.inspect}")
+      
+      RubyAMF.logger.debug("RubyAMF: get_ruby_obj ------------------------------------")
+      RubyAMF.logger.debug("Searching for: #{as_class_name.inspect}")
 
       # Get ruby class name
       ruby_class_name = @mappings.get_ruby_class_name as_class_name
 
-      RubyAMF.logger.debug("get_ruby_obj after direct mapping: #{ruby_class_name.inspect}")
+      RubyAMF.logger.debug("After direct mapping: #{ruby_class_name.inspect}")
 
       # Auto-map if necessary, removing namespacing to create mapped class name
       if RubyAMF.configuration.auto_class_mapping && as_class_name && ruby_class_name.nil?
@@ -196,16 +197,16 @@ module RubyAMF
         @mappings.map :as => as_class_name, :ruby => ruby_class_name
       end
 
-      RubyAMF.logger.debug("get_ruby_obj after auto mapping: #{ruby_class_name.inspect}")
+      RubyAMF.logger.debug("After auto mapping: #{ruby_class_name.inspect}")
 
       # Still don't know our ruby class? Load models until we find it
       ruby_class_name = model_load_search(as_class_name) if ruby_class_name.nil?
   
-      RubyAMF.logger.debug("get_ruby_obj after model_load_search: #{ruby_class_name.inspect}")
+      RubyAMF.logger.debug("After model_load_search: #{ruby_class_name.inspect}")
 
       # Create ruby object
       if ruby_class_name.nil?
-        RubyAMF.logger.warn("get_ruby_obj failed to map #{as_class_name.inspect}, returning TypedHash")
+        RubyAMF.logger.warn("Failed to map #{as_class_name.inspect}, returning TypedHash")
         return RocketAMF::Values::TypedHash.new(as_class_name)
       else
         ruby_class = ruby_class_name.constantize
@@ -213,6 +214,8 @@ module RubyAMF
         obj.send(:initialize) unless obj.respond_to?(:rubyamf_init) # warhammerkid: Should we check if it has initialize?
         return obj
       end
+      
+      RubyAMF.logger.debug("RubyAMF ----------------------------------------------------")
     end
 
     # Performs all enabled property translations (case, key type, ignore_fields)
